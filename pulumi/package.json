@@ -1,0 +1,13 @@
+{
+    "name": "emojibot",
+    "devDependencies": {
+        "@types/node": "^10.0.0"
+    },
+    "dependencies": {
+        "@pulumi/docker": "^2.4.1",
+        "@pulumi/fastly": "^2.10.1",
+        "@pulumi/gcp": "^4.4.0",
+        "@pulumi/kubernetes": "^2.7.3",
+        "@pulumi/pulumi": "^2.15.0"
+    }
+}
