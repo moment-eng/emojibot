@@ -1,0 +1,5 @@
+config:
+  fastly:apiKey:
+    secure: AAABAB5JP/efBinrhDGnF1WTNnCtgV7KfneZgDTqNbUo9hz/TtyybhsJNtVKjYc5pJ9LRl+YkjrR5MRUmwRF9w==
+  gcp:project: simitu-dev
+  gcp:zone: us-west1-a
