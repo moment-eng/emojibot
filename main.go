@@ -14,7 +14,8 @@ func main() {
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "🆗\n")
+	w.WriteHeader(http.StatusInternalServerError)
+	w.Write([]byte("500 - Failing health checks 😭\n"))
 }
 
 func HelloServer(w http.ResponseWriter, r *http.Request) {
