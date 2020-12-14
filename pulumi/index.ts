@@ -13,7 +13,10 @@ const name = "emojibot";
 // Located in us-west1-a by default.
 ///////////////
 
-const engineVersion = gcp.container.getEngineVersions().then(v => v.latestMasterVersion);
+// Don't use the latest, as us-central-1a gets upgraded last.
+// See https://cloud.google.com/kubernetes-engine/versioning-and-upgrades#rollout_schedule for rollout schedule. 
+const engineVersion = gcp.container.getEngineVersions().then(v => v.defaultClusterVersion);
+
 const cluster1 = new gcp.container.Cluster(name, {
     initialNodeCount: 2,
     minMasterVersion: engineVersion,
@@ -171,6 +174,10 @@ const appDeployment = new k8s.apps.v1.Deployment("emojibot-deployment", {
                     name: "emojibot",
                     image: img.imageName,
                     ports: [{ containerPort: appPort }],
+                    env: [{
+                        name: "FAIL_HEALTHCHECK",
+                        value: "1"
+                    }]
                 }],
             },
         },

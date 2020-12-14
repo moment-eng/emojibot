@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/moment-eng/emojibot/internal/env"
 )
 
 func main() {
@@ -14,8 +16,15 @@ func main() {
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte("500 - Failing health checks 😭\n"))
+	result, _ := env.GetBoolOrDefault("FAIL_HEALTHCHECK", false)
+
+	if result {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("500 - Failing health checks 😭\n"))
+		return
+	}
+
+	fmt.Fprintf(w, "🆗\n")
 }
 
 func HelloServer(w http.ResponseWriter, r *http.Request) {
