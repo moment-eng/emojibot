@@ -4,8 +4,8 @@ on:
     branches:
       - main
 jobs:
-  build:
-    name: build_test
+  build_test:
+    name: Validate Build for Deployment
 
     runs-on: ubuntu-latest
     steps:
