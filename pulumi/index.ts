@@ -174,10 +174,10 @@ const appDeployment = new k8s.apps.v1.Deployment("emojibot-deployment", {
                     name: "emojibot",
                     image: img.imageName,
                     ports: [{ containerPort: appPort }],
-                    env: [{
-                        name: "FAIL_HEALTHCHECK",
-                        value: "1"
-                    }]
+                    // env: [{
+                    //     name: "FAIL_HEALTHCHECK",
+                    //     value: "1"
+                    // }]
                 }],
             },
         },
@@ -229,8 +229,8 @@ const appService2 = new k8s.core.v1.Service(`emojibot-service-${failoverZone}`, 
     },
 }, { provider: clusterProvider2 });
 
-// Export the app deployment name so we can easily access it.
-export let appName2 = appDeployment2.metadata.name;
+// // Export the app deployment name so we can easily access it.
+// export let appName2 = appDeployment2.metadata.name;
 
 // Export the service's IP address.
 export let appAddress2 = appService2.status.apply(s => `http://${s.loadBalancer.ingress[0].ip}:${appPort}`);
