@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
+	"github.com/gorilla/handlers"
 	"github.com/moment-eng/emojibot/internal/env"
 )
 
@@ -12,7 +14,7 @@ func main() {
 	http.HandleFunc("/", HelloServer)
 
 	fmt.Println("Serving on 0:8080")
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", handlers.CombinedLoggingHandler(os.Stdout, http.DefaultServeMux))
 }
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {
@@ -21,6 +23,7 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 	if result {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte("500 - Failing health checks 😭\n"))
+
 		return
 	}
 
