@@ -174,10 +174,16 @@ const appDeployment = new k8s.apps.v1.Deployment("emojibot-deployment", {
                     name: "emojibot",
                     image: img.imageName,
                     ports: [{ containerPort: appPort }],
-                    // env: [{
-                    //     name: "FAIL_HEALTHCHECK",
-                    //     value: "1"
-                    // }]
+                    env: [{
+                        name: "FAIL_HEALTHCHECK",
+                        value: "1"
+                    }],
+                    livenessProbe: {
+                        httpGet: {
+                            path: "/healthcheck",
+                            port: appPort,
+                        }
+                    }
                 }],
             },
         },
@@ -214,6 +220,12 @@ const appDeployment2 = new k8s.apps.v1.Deployment(`emojibot-deployment-${failove
                     name: "emojibot",
                     image: img.imageName,
                     ports: [{ containerPort: appPort }],
+                    livenessProbe: {
+                        httpGet: {
+                            path: "/healthcheck",
+                            port: appPort,
+                        }
+                    }
                 }],
             },
         },
