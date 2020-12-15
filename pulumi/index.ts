@@ -236,19 +236,92 @@ export let appName2 = appDeployment2.metadata.name;
 export let appAddress2 = appService2.status.apply(s => `http://${s.loadBalancer.ingress[0].ip}:${appPort}`);
 
 const service = new fastly.Servicev1("emojibot", {
-    backends: [{
-         address: appAddress,
-         name: `emojibot-${gcp.config.zone}`,
-         port: appPort
-     },
-     {
-        address: appAddress2,
-        name: `emojibot-${failoverZone}`,
-        port: appPort
-    }],
-    domains: [{
-         comment: "demo app. we may use this to create github applications.",
-         name: "emojibot.moment.dev",
-    }],
+    backends: [
+        {
+            address: appAddress,
+            name: `emojibot-${gcp.config.zone}`,
+            port: appPort,
+        },
+        {
+            address: appAddress2,
+            name: `emojibot-${failoverZone}`,
+            port: appPort,
+        },
+    ],
+    domains: [
+        {
+            comment: "demo app. we may use this to create github applications.",
+            name: "emojibot.moment.dev",
+        },
+    ],
+    conditions: [
+        {
+            name: "Primary Down",
+            priority: 11,
+            statement: "req.restarts > 0 || !req.backend.healthy",
+            type: "REQUEST",
+        },
+    ],
+    headers: [
+        {
+            action: "set",
+            destination: "backend",
+            ignoreIfSet: false,
+            name: "Set Default Origin",
+            priority: 10,
+            source: "F_emojibot_us_west1_a",
+            type: "request",
+        },
+        {
+            action: "set",
+            destination: "backend",
+            ignoreIfSet: false,
+            name: "Set Failover Origin",
+            priority: 11,
+            requestCondition: "Primary Down",
+            source: "F_emojibot_us_central1_a",
+            type: "request",
+        },
+    ],
+    healthchecks: [
+        {
+            checkInterval: 2000,
+            expectedResponse: 200,
+            host: "emojibot.moment.dev",
+            httpVersion: "1.1",
+            initial: 9,
+            method: "POST",
+            name: "Generic Healthcheck",
+            path: "/healthcheck",
+            threshold: 7,
+            timeout: 5000,
+            window: 10,
+        },
+    ],
+    loggingDatadogs: [
+        {
+            format:
+                '{\n    "ddsource": "fastly",\n    "service": "%{req.service_id}V",\n    "date": "%{begin:%Y-%m-%dT%H:%M:%S%z}t",\n    "time_start": "%{begin:%Y-%m-%dT%H:%M:%S%Z}t",\n    "time_end": "%{end:%Y-%m-%dT%H:%M:%S%Z}t",\n    "http": {\n      "request_time_ms": %D,\n      "method": "%m",\n      "url": "%{json.escape(req.url)}V",\n      "useragent": "%{User-Agent}i",\n      "referer": "%{Referer}i",\n      "protocol": "%H",\n      "request_x_forwarded_for": "%{X-Forwarded-For}i",\n      "status_code": "%s"\n    },\n    "network": {\n      "client": {\n       "ip": "%h",\n       "name": "%{client.as.name}V",\n       "number": "%{client.as.number}V",\n       "connection_speed": "%{client.geo.conn_speed}V"\n      },\n     "destination": {\n       "ip": "%A"\n      },\n    "geoip": {\n    "geo_city": "%{client.geo.city.utf8}V",\n    "geo_country_code": "%{client.geo.country_code}V",\n    "geo_continent_code": "%{client.geo.continent_code}V",\n    "geo_region": "%{client.geo.region}V"\n    },\n    "bytes_written": %B,\n    "bytes_read": %{req.body_bytes_read}V\n    },\n    "host": "%{Fastly-Orig-Host}i",\n    "origin_host": "%v",\n    "is_ipv6": %{if(req.is_ipv6, "true", "false")}V,\n    "is_tls": %{if(req.is_ssl, "true", "false")}V,\n    "tls_client_protocol": "%{json.escape(tls.client.protocol)}V",\n    "tls_client_servername": "%{json.escape(tls.client.servername)}V",\n    "tls_client_cipher": "%{json.escape(tls.client.cipher)}V",\n    "tls_client_cipher_sha": "%{json.escape(tls.client.ciphers_sha)}V",\n    "tls_client_tlsexts_sha": "%{json.escape(tls.client.tlsexts_sha)}V",\n    "is_h2": %{if(fastly_info.is_h2, "true", "false")}V,\n    "is_h2_push": %{if(fastly_info.h2.is_push, "true", "false")}V,\n    "h2_stream_id": "%{fastly_info.h2.stream_id}V",\n    "request_accept_content": "%{Accept}i",\n    "request_accept_language": "%{Accept-Language}i",\n    "request_accept_encoding": "%{Accept-Encoding}i",\n    "request_accept_charset": "%{Accept-Charset}i",\n    "request_connection": "%{Connection}i",\n    "request_dnt": "%{DNT}i",\n    "request_forwarded": "%{Forwarded}i",\n    "request_via": "%{Via}i",\n    "request_cache_control": "%{Cache-Control}i",\n    "request_x_requested_with": "%{X-Requested-With}i",\n    "request_x_att_device_id": "%{X-ATT-Device-Id}i",\n    "content_type": "%{Content-Type}o",\n    "is_cacheable": %{if(fastly_info.state~"^(HIT|MISS)$", "true","false")}V,\n    "response_age": "%{Age}o",\n    "response_cache_control": "%{Cache-Control}o",\n    "response_expires": "%{Expires}o",\n    "response_last_modified": "%{Last-Modified}o",\n    "response_tsv": "%{TSV}o",\n    "server_datacenter": "%{server.datacenter}V",\n    "req_header_size": %{req.header_bytes_read}V,\n    "resp_header_size": %{resp.header_bytes_written}V,\n    "socket_cwnd": %{client.socket.cwnd}V,\n    "socket_nexthop": "%{client.socket.nexthop}V",\n    "socket_tcpi_rcv_mss": %{client.socket.tcpi_rcv_mss}V,\n    "socket_tcpi_snd_mss": %{client.socket.tcpi_snd_mss}V,\n    "socket_tcpi_rtt": %{client.socket.tcpi_rtt}V,\n    "socket_tcpi_rttvar": %{client.socket.tcpi_rttvar}V,\n    "socket_tcpi_rcv_rtt": %{client.socket.tcpi_rcv_rtt}V,\n    "socket_tcpi_rcv_space": %{client.socket.tcpi_rcv_space}V,\n    "socket_tcpi_last_data_sent": %{client.socket.tcpi_last_data_sent}V,\n    "socket_tcpi_total_retrans": %{client.socket.tcpi_total_retrans}V,\n    "socket_tcpi_delta_retrans": %{client.socket.tcpi_delta_retrans}V,\n    "socket_ploss": %{client.socket.ploss}V\n  }',
+            formatVersion: 2,
+            name: "DDOG logging endpoint",
+            region: "US",
+            token: "8f970a6b3cfbc15370de6ef56c0af1fe",
+        },
+    ],
+    snippets: [
+        {
+            content:
+                ' if (obj.status == 610) {\n  # 0 = unhealthy, 1 = healthy\n  synthetic "{" LF\n      {"  "timestamp": ""} now {"","} LF\n      {"  "F_emojibot_us_central1_a": "} backend.F_emojibot_us_central1_a.healthy {","} LF\n      {"  "F_emojibot_us_west1_a": "} backend.F_emojibot_us_west1_a.healthy LF\n      "}";\n  set obj.status = 200;\n  set obj.response = "OK";\n  set obj.http.content-type = "application/json";\n  set obj.http.x-hcstatus-F_emojibot_us_central1_a = backend.F_emojibot_us_central1_a.healthy;\n  set obj.http.x-hcstatus-F_emojibot_us_west1_a = backend.F_emojibot_us_west1_a.healthy;\n  return (deliver);\n}\n\n',
+            name: "Health Status error",
+            priority: 100,
+            type: "error",
+        },
+        {
+            content: 'if (req.url.path ~ "^/fastly/api/hc-status") {\n  error 610;\n}\n\n',
+            name: "Health Status recv",
+            priority: 100,
+            type: "recv",
+        },
+    ],
     forceDestroy: true,
-  });
+});
