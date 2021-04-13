@@ -14,7 +14,7 @@ const name = "emojibot";
 ///////////////
 
 // Don't use the latest, as us-central-1a gets upgraded last.
-// See https://cloud.google.com/kubernetes-engine/versioning-and-upgrades#rollout_schedule for rollout schedule. 
+// See https://cloud.google.com/kubernetes-engine/versioning-and-upgrades#rollout_schedule for rollout schedule.
 const engineVersion = gcp.container.getEngineVersions().then(v => v.defaultClusterVersion);
 
 const cluster1 = new gcp.container.Cluster(name, {
@@ -158,17 +158,21 @@ const img = new docker.Image(imageName, {
 // Deploy the emojibot container as a Kubernetes load balanced service.
 const appPort = 8080;
 const appLabels = { app: "emojibot" };
+const appAnnotations = {
+    "moment.dev/github-repository": "https://github.com/moment-eng/emojibot",
+};
 
 //////////////
 // Deploy to Cluster #1
 ///////////////
 
 const appDeployment = new k8s.apps.v1.Deployment("emojibot-deployment", {
+    metadata: { annotations: appAnnotations },
     spec: {
         selector: { matchLabels: appLabels },
         replicas: 1,
         template: {
-            metadata: { labels: appLabels },
+            metadata: { labels: appLabels, annotations: appAnnotations },
             spec: {
                 containers: [{
                     name: "emojibot",
@@ -210,11 +214,12 @@ export let appAddress = appService.status.apply(s => `http://${s.loadBalancer.in
 ///////////////
 
 const appDeployment2 = new k8s.apps.v1.Deployment(`emojibot-deployment-${failoverZone}`, {
+    metadata: { annotations: appAnnotations },
     spec: {
         selector: { matchLabels: appLabels },
         replicas: 1,
         template: {
-            metadata: { labels: appLabels },
+            metadata: { labels: appLabels, annotations: appAnnotations },
             spec: {
                 containers: [{
                     name: "emojibot",
