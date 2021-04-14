@@ -159,8 +159,7 @@ const img = new docker.Image(imageName, {
 const appPort = 8080;
 const appLabels = { app: "emojibot" };
 const appAnnotations = {
-    "moment.dev/github-org-name": "moment-eng",
-    "moment.dev/github-repository-name": "emojibot",
+    "moment.dev/github-repository": "https://github.com/moment-eng/emojibot",
 };
 
 //////////////
